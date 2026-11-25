@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-sp-mode="scroll">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>当粒子学会跟随 · 交互修复复盘</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/plus-jakarta-sans@5.2.5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/chinese-simplified-700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5.2.5/500.css">
+<style>
+:root {
+  --accent: #6d8bff; --accent2: #c084fc;
+  --bg: #0a0b14; --panel: #12142a; --text: rgba(255,255,255,.92);
+  --muted: rgba(255,255,255,.56); --dim: rgba(255,255,255,.38);
+  --line: rgba(255,255,255,.10); --serif: "Noto Serif SC", serif;
+  --mono: "Geist Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  line-height: 1.8; font-size: 15px; -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 12% 0%, rgba(109,139,255,.13), transparent 70%),
+    radial-gradient(ellipse 50% 35% at 92% 12%, rgba(192,132,252,.09), transparent 70%);
+  background-attachment: fixed;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 24px 96px; }
+
+/* DocHero · 非对称首屏 */
+.hero { position: relative; max-width: 1120px; margin: 0 auto; padding: 104px 40px 72px; }
+.hero::after {
+  content: ""; position: absolute; right: 6%; top: 64px; width: 240px; height: 240px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 36%, rgba(109,139,255,.5), rgba(192,132,252,.18) 45%, transparent 70%);
+  filter: blur(6px); opacity: .8; pointer-events: none;
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 10px; font: 500 11px/1 var(--mono);
+  letter-spacing: .18em; text-transform: uppercase; color: var(--accent);
+  padding: 9px 14px; border: 1px solid rgba(109,139,255,.35); border-radius: 999px;
+  background: rgba(109,139,255,.07); margin-bottom: 28px;
+}
+.hero-eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+.hero h1 {
+  position: relative; z-index: 2; font-family: var(--serif);
+  font-size: clamp(34px, 6vw, 62px); line-height: 1.16; letter-spacing: -.03em;
+  margin: 0 0 24px; max-width: 15em;
+  background: linear-gradient(118deg, #ffffff 10%, #b9c8ff 55%, #e0b3ff 92%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero-summary {
+  position: relative; z-index: 2; max-width: 620px; font-size: clamp(15px, 2.1vw, 18px);
+  color: var(--muted); line-height: 1.9; margin: 0;
+}
+.hero-meta { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 40px; font: 500 11px/1.6 var(--mono); color: var(--dim); letter-spacing: .05em; }
+.hero-meta b { color: var(--text); font-weight: 500; }
+
+/* 数据高亮 */
+.data-strip {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin: 8px 0 48px;
+}
+.data-strip .cell { background: var(--panel); padding: 24px 22px; }
+.data-strip .num { font: 500 clamp(26px,4vw,36px)/1 var(--mono); letter-spacing: -.04em; color: var(--accent); }
+.data-strip .num.alt { color: var(--accent2); }
+.data-strip .lbl { font-size: 11px; color: var(--dim); margin-top: 10px; letter-spacing: .04em; }
+
+/* 章节卡片 */
+.block-card {
+  position: relative; background: linear-gradient(160deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+  border: 1px solid var(--line); border-radius: 16px; padding: 36px 38px; margin: 20px 0;
+  box-shadow: 0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.block-card h2 {
+  font-family: var(--serif); font-size: clamp(22px, 3vw, 28px); line-height: 1.35;
+  letter-spacing: -.02em; margin: 0 0 22px; color: #fff;
+  display: flex; align-items: baseline; gap: 14px;
+}
+.block-card h2::before {
+  content: ""; flex: none; width: 4px; height: 1.05em; border-radius: 3px;
+  background: linear-gradient(180deg, var(--accent), var(--accent2));
+}
+.block-card p { color: var(--text); margin: 14px 0; }
+.block-card p strong { color: #fff; font-weight: 600; }
+.block-card ul, .block-card ol { padding-left: 22px; margin: 16px 0; }
+.block-card li { margin: 10px 0; color: var(--text); }
+.block-card li::marker { color: var(--accent); }
+a { color: var(--accent2); text-decoration: none; border-bottom: 1px solid rgba(192,132,252,.35); }
+code {
+  background: rgba(109,139,255,.10); color: #b9c8ff; padding: 2px 7px; border-radius: 6px;
+  font-family: var(--mono); font-size: .88em; border: 1px solid rgba(109,139,255,.16);
+}
+pre {
+  background: #0a0c1c; border: 1px solid var(--line); border-radius: 12px;
+  padding: 20px 22px; overflow-x: auto; margin: 20px 0; line-height: 1.7;
+}
+pre code { background: none; border: none; padding: 0; color: #cdd6ff; font-size: 13px; }
+
+/* QuoteBlock */
+blockquote {
+  margin: 24px 0; padding: 20px 24px; border-left: 3px solid var(--accent2);
+  background: rgba(192,132,252,.06); border-radius: 0 12px 12px 0;
+}
+blockquote p { margin: 0; color: var(--muted) !important; font-family: var(--serif); font-size: 16px; line-height: 1.9; }
+
+/* ComparisonGrid / 表格 */
+.table-wrap { overflow-x: auto; margin: 20px 0; }
+table { width: 100%; border-collapse: collapse; min-width: 440px; }
+th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13.5px; }
+th { color: var(--accent); font-weight: 600; font-family: var(--mono); font-size: 12px; letter-spacing: .04em; background: rgba(109,139,255,.06); }
+td { color: var(--text); }
+tbody tr:nth-child(2) { background: rgba(109,139,255,.05); }
+tbody tr:hover { background: rgba(255,255,255,.03); }
+
+figure { margin: 18px 0; }
+figure img { width: 100%; border-radius: 12px; }
+figcaption { color: var(--dim); font-size: 12px; text-align: center; margin-top: 8px; }
+img { max-width: 100%; height: auto; }
+
+/* 滚动入场 */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1); }
+.reveal.in { opacity: 1; transform: none; }
+footer { text-align: center; color: var(--dim); font-size: 11px; font-family: var(--mono); letter-spacing: .08em; padding: 48px 0 0; }
+
+@media (max-width: 680px) {
+  .hero { padding: 72px 24px 48px; }
+  .hero::after { width: 150px; height: 150px; top: 40px; right: -30px; }
+  .hero h1 { max-width: 100%; }
+  .block-card { padding: 26px 22px; }
+  .data-strip { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+</style>
+</head>
+<body>
+<header class="hero">
+  <span class="hero-eyebrow">Interaction · Postmortem</span>
+  <h1>当粒子学会跟随</h1>
+  <p class="hero-summary">一个十万粒子的 Canvas 页面里，摄像头已经检测到手掌，粒子也在不停旋转、张合、变换形态。可用户的一句话点出了问题所在：「手动，粒子也动，但它不跟着我走。」</p>
+  <div class="hero-meta">
+    <span>主题 <b>交互修复复盘</b></span>
+    <span>对象 <b>Canvas 2D 粒子系统</b></span>
+    <span>规模 <b>100,000 粒子</b></span>
+  </div>
+</header>
+<main class="wrap">
+
+<div class="data-strip reveal">
+  <div class="cell"><div class="num">100K</div><div class="lbl">粒子规模</div></div>
+  <div class="cell"><div class="num alt">3</div><div class="lbl">层改动</div></div>
+  <div class="cell"><div class="num">10<span style="font-size:.5em"> 帧</span></div><div class="lbl">跟随平滑延迟</div></div>
+</div>
+
+<section class="reveal block-card">
+<p>一个十万粒子的 Canvas 页面里，摄像头已经检测到手掌，粒子也在不停旋转、张合、变换形态。可用户的一句话点出了问题所在：「手动，粒子也动，但它不跟着我走。」</p>
+<p>这不是渲染故障，而是一次典型的<strong>能力错觉</strong>：系统有响应，却缺少用户真正期待的那一层映射。本文复盘这次修复从诊断到落地的完整过程。</p>
+</section>
+
+<section class="reveal block-card">
+<h2>一、症状：动，但不跟随</h2>
+<p>用户的描述很克制——「手势动，粒子也动，鼠标动也是」。三种输入都能让画面产生变化，但变化的方向与输入之间没有任何空间对应关系。</p>
+<p>拆解后得到三条可验证的现象：</p>
+<ul>
+<li>开启摄像头后，状态栏正确显示「检测到 1 只手」，说明手部 landmark 数据已经进来。</li>
+<li>张开与握拳能明显改变粒子的扩散半径，说明张合度映射是通的。</li>
+<li>手掌左右移动时，粒子群整体纹丝不动；鼠标移动只产生局部涡流，并不带动粒子群位移。</li>
+</ul>
+<p>结论指向一个明确判断：<strong>问题不在"有没有动"，而在"动的是不是我期待的自由度"。</strong></p>
+</section>
+
+<section class="reveal block-card">
+<h2>二、诊断：从代码出发，而不是从猜测出发</h2>
+<p>面对一个 575 行的单文件页面，直接改是想当然的。先把源码拉下来通读，定位手势链路的三个关键位置。</p>
+<p>第一处，手势回调。MediaPipe 的 <code>onResults</code> 拿到 <code>multiHandLandmarks</code> 后，只做了一件事：用 <code>handOpen()</code> 计算手掌张开程度，写入 <code>targetOpen</code>。landmark 里完整的 x / y 空间坐标，在这一步被整体丢弃。</p>
+<p>第二处，主循环。<code>targetOpen</code> 被平滑成 <code>smoothOpen</code>，再换算成 <code>scale</code>（缩放）与 <code>turb</code>（湍流）。也就是说，手势唯一的输出通道是"张合"，没有任何平移或旋转自由度。</p>
+<p>第三处，鼠标链路。鼠标确实记录了 <code>mouseX / mouseY</code>，但只用于两个局部效果：半径约 161 像素内的切向涡流，以及 0 号蝴蝶的追随。粒子群的重心始终钉在屏幕中心。</p>
+<blockquote><p>一个页面同时打开了"自动巡演"：每 7 秒切换一次形态，粒子持续自转。这层自主运动盖过了微弱的交互反馈，让"不跟随"的体感进一步放大。</p></blockquote>
+</section>
+
+<section class="reveal block-card">
+<h2>三、根因：缺失的"位置层"</h2>
+<p>把整条链路画出来，缺口一目了然。</p>
+<p>输入层有手掌坐标与鼠标坐标；计算层有张合度、缩放、湍流、涡流；渲染层有逐粒子的三维投影。但<strong>从"位置输入"到"整体位移"之间没有任何一条边</strong>。</p>
+<ul>
+<li>手势链路：landmark → 张合度 → scale / turb → 粒子形态变化</li>
+<li>鼠标链路：指针坐标 → 局部涡流 / 单只蝴蝶 → 局部扰动</li>
+<li>缺失链路：位置输入 → 平滑偏移 → 投影坐标整体平移</li>
+</ul>
+<p>用户的心智模型是"手到哪，粒子跟到哪"，而代码实现的是"手张多大，粒子散多开"。两者对"跟随"的定义根本不同。</p>
+</section>
+
+<section class="reveal block-card">
+<h2>四、方案：三层改动，一次提交</h2>
+<p>修复遵循最小改动原则，只补上缺失的那一层，不重写粒子算法、不触碰形态生成、不改变渲染管线。</p>
+<p><strong>第一层 · 状态。</strong> 新增手掌归一化坐标 <code>handNX / handNY</code> 与一组屏幕空间偏移量 <code>followX / followY</code>、<code>followTX / followTY</code>，分别保存平滑值与目标值。</p>
+<p><strong>第二层 · 采集。</strong> 在 <code>onResults</code> 中取 landmark 9（中指根部，接近手掌中心）作为位置源。由于摄像头画面做了镜像显示，横坐标取 <code>1 - palm.x</code>，让粒子的运动方向与用户在预览里看到的手势一致；纵坐标直接映射。</p>
+<p><strong>第三层 · 应用。</strong> 主循环里按优先级计算目标偏移：手势有效时用手掌位置，否则用鼠标位置，两者都没有则平滑回中。随后把偏移量加到每个粒子的投影结果上。</p>
+<div class="table-wrap"><table>
+<thead><tr><th>输入源</th><th>判定条件</th><th>目标偏移</th></tr></thead>
+<tbody>
+<tr><td>手掌</td><td>摄像头开启、检测到手、900ms 内有更新</td><td>归一化位置映射到画面的 62%</td></tr>
+<tr><td>鼠标</td><td>指针位于画布内</td><td>相对中心的位移取 55%</td></tr>
+<tr><td>无输入</td><td>以上都不成立</td><td>平滑回中</td></tr>
+</tbody>
+</table></div>
+<pre><code>const handLive = camActive &amp;&amp; handFollow &amp;&amp; (performance.now() - lastHand &lt; 900);
+if (handLive) {
+  followTX = (handNX - .5) * W * .62;
+  followTY = (handNY - .5) * H * .62;
+} else if (mouseX &gt; -900) {
+  followTX = (mouseX - hw) * .55;
+  followTY = (mouseY - hh) * .55;
+} else {
+  followTX = 0; followTY = 0;
+}
+followX += (followTX - followX) * .10 * step;
+followY += (followTY - followY) * .10 * step;</code></pre>
+</section>
+
+<section class="reveal block-card">
+<h2>五、实现细节：三个容易踩的坑</h2>
+<p><strong>镜像方向。</strong> 摄像头原始画面与 CSS 镜像后的预览方向相反。若直接用 <code>palm.x</code>，用户向左挥手、粒子却向右跑，体感会比不跟随更糟。取反是必要的一步。</p>
+<p><strong>时间窗口。</strong> 手势检测是异步回调，帧率低于渲染循环。用 900ms 的"新鲜度"窗口判断手势是否有效，手移出画面后能迅速把控制权交还给鼠标，避免粒子卡在最后位置。</p>
+<p><strong>平滑系数。</strong> <code>0.10</code> 的阻尼让位移有约十帧的跟随延迟。这个值在"跟手"和"不抖"之间取平衡：再高会放大 landmark 抖动，再低会显得迟钝。</p>
+</section>
+
+<section class="reveal block-card">
+<h2>六、结果与边界</h2>
+<p>改动落地后，手掌左右、上下移动会带动整个粒子群平移；鼠标在画布内移动时同样生效，原有的涡流与蝴蝶追随保留。自动巡演默认关闭，避免自主运动掩盖跟随反馈。</p>
+<p>需要说明的边界：</p>
+<ul>
+<li>位置跟随作用于屏幕空间的投影结果，不改变粒子之间的相对结构，形态本身仍然完整。</li>
+<li>手势位置取自单只手掌（列表中的第一只），多手场景下张合度仍取平均值。</li>
+<li>摄像头权限被拒绝或 MediaPipe 模型加载失败时，自动降级为鼠标跟随，页面其余功能不受影响。</li>
+</ul>
+</section>
+
+<section class="reveal block-card">
+<h2>七、结语</h2>
+<p>这次修复的技术量不大——真正新增的核心逻辑只有十余行。但它说明了一个容易被忽略的事实：<strong>交互故障未必是功能失效，也可能是能力映射的错位。</strong></p>
+<p>当系统"有响应"却让人觉得"没反应"时，与其继续加大响应幅度，不如回到输入与输出之间，检查那条最直觉的映射是否真的存在。</p>
+</section>
+
+<footer>由 WorkBuddy 资料库生成</footer>
+</main>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    els.forEach(function (el) { el.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  els.forEach(function (el) { io.observe(el); });
+})();
+</script>
+</body>
+</html>
